@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title></title>
+  </head>
+<script>
+  const svg64 = require('svg64');
+
+// Import `readFileSync` from the file system module
+  const { readFileSync } = require('fs');
+
+  // Read your SVG file's contents
+  const svg = readFileSync('./images/test_email_images/background-bd.svg', 'utf-8');
+
+  // This is your SVG in base64 representation
+  const base64fromSVG = svg64(svg);
+
+  console.log(base64fromSVG);
+</script>
+<body>
+  <h3>Hello NDR-CALL</h3>
+  <img src='https://new-itl-uploads.s3.ap-south-1.amazonaws.com/images/email_images/fedex.svg' class="estimate-delivery-img">
+  
+  <form>
+    <input type="button" onclick="startRecord()" value="startRecord" />
+    <input type="button" onclick="stopRecord()" value="stopRecord" />
+ </form>
+  <p id="demo"></p>
+
+</body>
+<script>
+  const recordAudio = () =>
+  new Promise(async resolve => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    const audioChunks = [];
+
+    mediaRecorder.addEventListener("dataavailable", event => {
+      audioChunks.push(event.data);
+    });
+
+    const start = () => mediaRecorder.start();
+
+    const stop = () =>
+      new Promise(resolve => {
+        mediaRecorder.addEventListener("stop", () => {
+          const audioBlob = new Blob(audioChunks);
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          const play = () => audio.play();
+          resolve({ audioBlob, audioUrl, play });
+        });
+
+        mediaRecorder.stop();
+      });
+
+    resolve({ start, stop });
+  });
+
+ 
+(async () => {
+  const recorder = await recordAudio();
+  recorder.start();
+  await sleep(30000);
+  const audio = await recorder.stop();
+  audio.play();
+})();
+ 
+
+const sleep = time => new Promise(resolve => setTimeout(resolve, time));
+
+
+</script>
+</html>
