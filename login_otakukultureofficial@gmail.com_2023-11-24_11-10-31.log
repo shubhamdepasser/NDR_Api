@@ -1,0 +1,4 @@
+Paylod :- {"form_data":{"email":"otakukultureofficial@gmail.com","password":"Otaku@123","access_token":"1a5ba5bf6f9d0ec16fccb98f310cb00f","secret_key":"a6ea57e6157ecb39e28512a3235d556a"}}
+error :- 
+ER_NO_SUCH_TABLE: Table 'ndr_demo.user_login_details' doesn't exist
+ 
