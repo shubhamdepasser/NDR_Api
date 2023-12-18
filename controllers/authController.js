@@ -28,19 +28,14 @@ exports.login = async (req, res, next) =>
         
         if(form_data.access_token == access_token && form_data.secret_key == secret_key)
         {
-           // User.login_user(form_data, req, res, next);
-			res.status(200).json({
-                status : "error",
-                status_code : 400,
-                message : "Invalid Request demo-api.ithinklogistics.com",
-            });
+            User.login_user(form_data, req, res, next);
         }
         else
         {
             res.status(200).json({
                 status : "error",
                 status_code : 400,
-                message : "Invalid Request demo-api.ithinklogistics.com",
+                message : "Invalid Request",
             });
         }
        
@@ -179,11 +174,6 @@ exports.view_call_details_pagination = async (req, res, next) =>
         if(form_data.access_token == access_token && form_data.secret_key == secret_key)
         {
             User.view_call_details_pagination(form_data, req, res, next);
-			res.status(200).json({
-                status : "error",
-                status_code : 400,
-                message : "Invalid Request",
-            });
         }
         else
         {
@@ -280,6 +270,42 @@ exports.update_call_status = async (req, res, next) =>
     }
 };
    
+exports.mobile_update_call_status = async (req, res, next) => 
+{
+    try 
+    {
+        const {
+            form_data
+        } = req.body;
+        console.log(req.body)
+        //base64image.base64ToImage(req, res, next);
+        
+        if(form_data.access_token == access_token && form_data.secret_key == secret_key)
+        {
+            User.mobile_update_call_status(form_data, req, res, next);
+        }
+        else
+        {
+            res.status(200).json({
+                status : "error",
+                status_code : 400,
+                message : "Invalid Request",
+            });
+        }
+       
+        
+    } catch (err) 
+    {
+        res.status(200).json({
+            status : "error",
+            status_code : 400,
+            message : "Something went wrong!!! please try again.",
+            error_message: err,
+        });
+        //next(err);
+    }
+};
+
 exports.save_call_record_upload_file_name = async (req, res, next) => 
 {
     try 
