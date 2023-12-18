@@ -9,6 +9,7 @@ var debug = require('debug')('mean-app:server');
 var http = require('http');
 const fs = require('fs');
 
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 1;
 
 process.on('uncaughtException', err => {
     console.log('UNCAUGHT EXCEPTION!!! config shutting down...');
@@ -26,7 +27,6 @@ process.on('unhandledRejection', err => {
         process.exit(1);
     });
 });
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 1;
 var port = process.env.PORT;
 app.set('port', port);
 

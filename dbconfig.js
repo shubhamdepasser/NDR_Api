@@ -1,17 +1,19 @@
 var mysql = require('mysql');
 
 var pool  = mysql.createPool({
-  connectionLimit : 10,
-  queueLimit: 100,
-  host : '127.0.0.1',
-  port : 3305,
-  user : 'root',
-  password : 'root',
-  database : 'depasser_itl',
-  connectTimeout : 10000,
-  waitForConnections: true,
-  acquireTimeout: 10000,
-  debug : false
+  host : 'prodrds.cludb0m2tt0c.ap-south-1.rds.amazonaws.com',
+  user : 'ithinklo_nodejs',
+  password : '27g(>&q[N8GY<4md',
+  database : 'ithinklo_live_new1',
+  //waitForConnections: true,
+  port: 3306,
+ queueLimit : 0, // unlimited queueing
+ connectionLimit : 0 ,// unlimited connections
+ multipleStatements : true,
+ connectTimeout  : 60 * 60 * 1000,
+  acquireTimeout  : 60 * 60 * 1000,
+  timeout         : 60 * 60 * 1000,
+  debug : true
 });
 
 pool.on('connection', function (connection) {

@@ -27,6 +27,7 @@ exports.view_nonNDRcall_summary_count = async function(form_data)
         {
             await connection.query(`select count(*) as total_count, 
             (select count(*) from non_ndr_call_details where calling_date <= "`+current_date+`" and user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as today_count,
+			(select sum(call_duration) from non_ndr_call_details where modified_date LIKE "%`+current_date+`%" and user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as todays_total_call_duration,
             (select count(*) from non_ndr_call_details where DATE(calling_date) <= "`+current_date+`" and DATE(modified_date) = "`+current_date+`" and user_id = "`+user_id+`" and updated_user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as today_attended_count,
             (select count(*) from non_ndr_call_details where calling_date <= "`+yesterday_date+`" and user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as Yesterday_count,
             (select count(*) from non_ndr_call_details where DATE(calling_date) <= "`+yesterday_date+`" and DATE(modified_date) = "`+yesterday_date+`" and user_id = "`+user_id+`" and updated_user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as yesterday_attended_count
@@ -205,6 +206,8 @@ exports.view_nonNDRcall_details_pagination = async function(form_data)
     u.last_name,
     u.company_name,  
     om.user_id,
+    om.created_date as order_date,
+    om.order_sub_order_no as order_id,
     om.customer_name,
     om.airway_bill_no,
     om.customer_mobile,
@@ -246,6 +249,8 @@ exports.view_nonNDRcall_details_pagination = async function(form_data)
             om.customer_city,
             om.customer_country,
             om.user_id,
+            om.created_date as order_date,
+            om.order_sub_order_no as order_id,
             om.customer_name,
             om.airway_bill_no,
             om.customer_mobile,
@@ -306,7 +311,9 @@ exports.view_nonNDRcall_details_get_count = async function(form_data)
             LEFT JOIN order_management om
             ON ncd.airway_bill_no = om.airway_bill_no
             LEFT JOIN user u ON om.user_id = u.id
-            where ncd.user_id = "`+user_id+`" and ncd.remark_id = "`+remark_id+`"  and om.user_id="2681" and ncd.calling_date <= "`+current_date+`" and ncd.is_deleted = 0 and ncd.status = 1 order by om.customer_mobile,ncd.total_attempt desc`, function (error, results, fields) {
+			LEFT JOIN user_store ust
+            on om.store_id = ust.id
+            where ncd.user_id = "`+user_id+`" and ncd.remark_id = "`+remark_id+`" and ncd.calling_date <= "`+current_date+`" and ncd.is_deleted = 0 and ncd.status = 1 order by ncd.priority asc`, function (error, results, fields) {
                 if (error)
                 { 
                     connection.release();
@@ -330,7 +337,7 @@ exports.view_nonNDRcall_details_get_count = async function(form_data)
 exports.update_nonNDRcall_status = async function(update_query,update_query_data) 
 {
 
-    console.log("results");
+  
     return new Promise(function(resolve, reject) 
     {  
         mysqlpool.getConnection(async function(err, connection) 

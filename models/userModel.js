@@ -20,8 +20,7 @@ exports.login_user = async function(form_data)
         
         mysqlpool.getConnection(async function(err, connection) 
         {
-            await connection.query("select * from user where user_type='2' and lower(email)=? and is_deleted = '0' limit 1 ",
-			 [Email], function (error, results, fields) {
+            await connection.query("select * from user where user_type='2' and lower(email)=? and is_deleted = '0' limit 1 ", [Email], function (error, results, fields) {
                 if (error)
                 { 
                     connection.release();
@@ -136,6 +135,7 @@ exports.view_call_summary_count = async function(form_data)
         {
             await connection.query(`select count(*) as total_count, 
             (select count(*) from ndr_call_details where calling_date <= "`+current_date+`" and user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as today_count,
+			(select sum(call_duration) from ndr_call_details where modified_date LIKE "%`+current_date+`%" and user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as todays_total_call_duration,
             (select count(*) from ndr_call_details where DATE(calling_date) <= "`+current_date+`" and DATE(modified_date) = "`+current_date+`" and user_id = "`+user_id+`" and updated_user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as today_attended_count,
             (select count(*) from ndr_call_details where calling_date <= "`+yesterday_date+`" and user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as Yesterday_count,
             (select count(*) from ndr_call_details where DATE(calling_date) <= "`+yesterday_date+`" and DATE(modified_date) = "`+yesterday_date+`" and user_id = "`+user_id+`" and updated_user_id = "`+user_id+`" and is_deleted = 0 and status = 1) as yesterday_attended_count
@@ -234,6 +234,7 @@ exports.view_call_details = async function(form_data)
             om.customer_address,
             om.pincode,
             om.customer_city,
+            om.customer_state,
             om.customer_country,
             om.user_id,
             om.customer_name,
@@ -316,6 +317,8 @@ exports.view_call_details_pagination = async function(form_data)
     u.last_name,
     u.company_name,  
     om.user_id,
+    om.created_date as order_date,
+    om.order_sub_order_no as order_id,
     om.customer_name,
     om.airway_bill_no,
     om.customer_mobile,
@@ -357,8 +360,11 @@ exports.view_call_details_pagination = async function(form_data)
             om.customer_address,
             om.pincode,
             om.customer_city,
+            om.customer_state,
             om.customer_country,
             om.user_id,
+            om.created_date as order_date,
+            om.order_sub_order_no as order_id,
             om.customer_name,
             om.airway_bill_no,
             om.customer_mobile,
@@ -380,7 +386,7 @@ exports.view_call_details_pagination = async function(form_data)
             on om.id = ud.o_m_row_id
 			LEFT JOIN user_store ust
             on om.store_id = ust.id
-            where ncd.user_id = "`+user_id+`" and ncd.remark_id = "`+remark_id+`" and ncd.calling_date <= "`+current_date+`" and ncd.is_deleted = 0 and ud.status = 0 and ncd.status = 1 order by ncd.priority asc`+limit, function (error, results, fields) {
+            where ncd.user_id = "`+user_id+`" and ncd.remark_id = "`+remark_id+`"  and ncd.calling_date <= "`+current_date+`" and ncd.is_deleted = 0 and ud.status = 0 and ncd.status = 1 order by ncd.priority asc`+limit, function (error, results, fields) {
                 if (error)
                 { 
                     connection.release();
@@ -415,7 +421,7 @@ exports.view_call_details_get_count = async function(form_data)
     return new Promise(function(resolve, reject) 
     {
         mysqlpool.getConnection(async function(err, connection) 
-        {	
+        {
             await connection.query(`SELECT count(*) as total
             FROM ndr_call_details ncd
             LEFT JOIN order_management om
@@ -423,7 +429,7 @@ exports.view_call_details_get_count = async function(form_data)
             LEFT JOIN user u ON om.user_id = u.id
             LEFT JOIN undelivered_orders ud
             on om.id = ud.o_m_row_id
-            where ncd.user_id = "`+user_id+`" and ncd.remark_id = "`+remark_id+`"  and om.user_id="2681" and ncd.calling_date <= "`+current_date+`" and ncd.is_deleted = 0 and ud.status = 0 and ncd.status = 1 order by om.customer_mobile,ncd.total_attempt desc`, function (error, results, fields) {
+            where ncd.user_id = "`+user_id+`" and ncd.remark_id = "`+remark_id+`" and ncd.calling_date <= "`+current_date+`" and ncd.is_deleted = 0 and ud.status = 0 and ncd.status = 1 order by om.customer_mobile,ncd.total_attempt desc`, function (error, results, fields) {
                 if (error)
                 { 
                     connection.release();
@@ -453,31 +459,6 @@ exports.update_call_status = async function(update_query,update_query_data)
         mysqlpool.getConnection(async function(err, connection) 
         {
             await connection.query(update_query,update_query_data,async function (error, results, fields) {
-                if (error)                                         
-                { 
-                    console.log(error);
-                    connection.release();
-                    reject(0);
-                }else
-                {
-                    console.log(results);
-                    connection.release();
-                    resolve(1);
-                }
-            });
-        });
-    });
-};
-
-exports.common_query = async function(update_query) 
-{
-
-  
-    return new Promise(function(resolve, reject) 
-    {  
-        mysqlpool.getConnection(async function(err, connection) 
-        {
-            await connection.query(update_query,async function (error, results, fields) {
                 if (error)                                         
                 { 
                     console.log(error);
@@ -546,6 +527,31 @@ exports.save_call_record_upload_file_name = async function(form_data)
                     console.log(results);
                     connection.release();
                     resolve(1);
+                }
+            });
+        });
+    });
+};
+
+exports.common_query = async function(update_query) 
+{
+
+  
+    return new Promise(function(resolve, reject) 
+    {  
+        mysqlpool.getConnection(async function(err, connection) 
+        {
+            await connection.query(update_query,async function (error, results, fields) {
+                if (error)                                         
+                { 
+                    console.log(error);
+                    connection.release();
+                    reject(0);
+                }else
+                {
+                    console.log(results);
+                    connection.release();
+                    resolve(results);
                 }
             });
         });
